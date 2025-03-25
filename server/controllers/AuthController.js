@@ -5,7 +5,9 @@ import bcrypt from "bcryptjs"
 import "dotenv/config"
 import CreateToken from "../utils/Token.js";
 import jwt from "jsonwebtoken"
+import { OAuth2Client } from "google-auth-library"
 
+const googleOauthClient = new OAuth2Client(process.env.CLIENT_ID)
 
 const SignUpWithCredentials = async (req, res) => {
     const { email, password } = req.body;
@@ -157,4 +159,73 @@ const checkAuthentication = async (req, res) => {
     }
 }
 
-export { SignUpWithCredentials, checkAuthentication, SignInWithCredentials, LogOut }
+const GoogleAuth = async (req, res) => {
+    try {
+        const { email, googleId, name, picture } = req.body;
+
+        const existingUser = await db.select().from(users).where(eq(users.email, email));
+
+        if (existingUser.length > 0) {
+            // User exists
+            if (existingUser[0].isGoogleUser === false) {
+                return res.status(400).json({
+                    success: false,
+                    message: "This email is already registered with a different login method"
+                });
+            }
+
+            // Existing Google user
+            const token = await CreateToken(email);
+            return res.cookie("jwt", token, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                maxAge: 30 * 24 * 60 * 60 * 1000
+            }).status(200).json({
+                success: true,
+                message: "Google User Logged In successfully",
+                user: {
+                    id: existingUser[0].id,
+                    email: existingUser[0].email,
+                    createdAt: existingUser[0].createdAt,
+                    updatedAt: existingUser[0].updatedAt
+                }
+            });
+        }
+
+        // New Google user
+        const newUser = await db.insert(users).values({
+            email: email,
+            isGoogleUser: true,
+        }).returning();
+
+        if (newUser[0]) {
+            const token = await CreateToken(email);
+            res.cookie("jwt", token, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                maxAge: 30 * 24 * 60 * 60 * 1000
+            });
+
+            return res.status(200).json({
+                success: true,
+                message: "Google User Successfully Created",
+                user: {
+                    id: newUser[0].id,
+                    email: newUser[0].email,
+                    createdAt: newUser[0].createdAt,
+                    updatedAt: newUser[0].updatedAt
+                }
+            });
+        }
+
+    } catch (error) {
+        console.error("Google Auth Error:", error);
+        res.status(500).json({
+            success: false,
+            message: "An Internal Error Occurred",
+            error: error.message
+        });
+    }
+};
+
+export { SignUpWithCredentials, checkAuthentication, SignInWithCredentials, LogOut, GoogleAuth }
