@@ -3,12 +3,14 @@ import AuthRoutes from "./routes/authRoutes.js"
 import dotenv from "dotenv"
 import cors from "cors"
 import cookieParser from "cookie-parser"
-
+import { Server } from "socket.io";
+import { SocketEvents } from "./SocketServer.js"
 
 const PORT = 8000
 
 dotenv.config()
 const app = express()
+let server;
 
 const corsOptions = {
     origin: "http://localhost:5173",
@@ -32,6 +34,18 @@ app.get("/", (req, res) => {
 })
 
 
-app.listen(PORT, (err) => {
+server = app.listen(PORT, (err) => {
     if (err) console.log(err)
+})
+
+let io = new Server(server, {
+    pingTimeout: 60000,
+    cors: {
+        origin: "http://localhost:5173"
+    }
+})
+
+io.on("connection", (socket) => {
+    console.log("Socket connected Successfully:", socket.id)
+    SocketEvents(socket, io)
 })

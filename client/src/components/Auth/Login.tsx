@@ -22,10 +22,12 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { CheckAuth, setAuth } = useAuth();
   const navigate = useNavigate()
+  const [FormError, setFormError] = useState("")
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setFormError("")
 
     try {
       const response = await api.post(`${import.meta.env.VITE_COMMON_URL}/user/sign-in-with-credentials`, {
@@ -38,8 +40,9 @@ const Login = () => {
 
         navigate("/")
       }
-    } catch (error) {
+    } catch (error: any) {
       console.log("An error occured in Login", error)
+      setFormError(error.response.data.message)
     } finally {
       setIsLoading(false)
     }
@@ -205,10 +208,12 @@ const Login = () => {
                 onChange={() => setRememberMe(!rememberMe)}
                 className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
               />
+              
               <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
                 Remember me for 30 days
               </label>
             </div>
+            {FormError && <p className='text-red-500'>{FormError}</p>}
 
             <div>
               <button

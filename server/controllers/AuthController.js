@@ -55,7 +55,7 @@ const SignUpWithCredentials = async (req, res) => {
     } catch (error) {
         res.status(500).json({
             success: false,
-            message: "An Internal Error Occured" || error.message
+            message:  error.message || "An Internal Error Occured"
         })
     }
 }
@@ -65,7 +65,7 @@ const SignInWithCredentials = async (req, res) => {
         const { email, password } = req.body
 
         const user = await db.select().from(users).where(eq(users.email, email))
-        if (!user) {
+        if (user.length === 0) {
             return res.status(404).json({
                 success: false,
                 message: "User Not Found"

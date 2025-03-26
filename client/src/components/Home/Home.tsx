@@ -1,12 +1,32 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../../Context/userContextProvider';
 import { Video, Users, Calendar, Settings, LogOut } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import { Button } from '../ui/button';
+import { CustomDialog } from '../Shadcn/Dialog';
+import { v4 as uuidv4 } from 'uuid';
 
 function Home() {
   const { auth, user } = useAuth();
-  const navigate = useNavigate()
+  const navigate = useNavigate();
+  const [open, setopen] = useState(false)
+  const [roomId, setroomId] = useState("")
+  const [dialogmethod, setdialogmethod] = useState("")
 
+  const handleCreateRoom = (): void => {
+    const callId = uuidv4();
+
+
+  }
+
+  const handleJoinRoom = () : void =>{
+
+  }
+
+  const handleDialogOpen = (method: string): void => {
+    setopen(true)
+    setdialogmethod(method)
+  }
   if (auth) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -44,16 +64,19 @@ function Home() {
               <p className="mt-1 text-gray-600">Ready to connect with someone today?</p>
 
               <div className="mt-6">
-                <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                <Button onClick={() => handleDialogOpen("start")} className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                   <Video className="h-5 w-5 mr-2" />
                   Start New Meeting
-                </button>
-                <button className="ml-4 inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                </Button>
+                <button onClick={() => handleDialogOpen("join")} className="ml-4 inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                   Join a Meeting
                 </button>
+
               </div>
             </div>
           </div>
+
+          <CustomDialog open={open} setopen={setopen} dialogmethod={dialogmethod} roomId={roomId} setroomId={setroomId} handleCreateRoom={handleCreateRoom} handleJoinRoom={handleJoinRoom}/>
 
           {/* Quick Actions */}
           <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
