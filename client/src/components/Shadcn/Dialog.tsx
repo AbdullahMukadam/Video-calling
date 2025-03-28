@@ -10,6 +10,9 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { ClipboardWithIcon } from "flowbite-react"
+import { useEffect, useState } from "react"
+import { useNavigate } from "react-router-dom"
 
 interface Props {
     open: boolean;
@@ -19,12 +22,22 @@ interface Props {
     handleCreateRoom: () => void;
     dialogmethod: string;
     handleJoinRoom: () => void;
+    generatedRoomId: string
 }
-export function CustomDialog({ open, setopen, setroomId, roomId, handleCreateRoom, dialogmethod, handleJoinRoom }: Props) {
-
+export function CustomDialog({ open, setopen, setroomId, roomId, handleCreateRoom, dialogmethod, handleJoinRoom, generatedRoomId }: Props) {
+    const [roomIdgenerated, setroomIdGenerated] = useState(false)
+    const navigate = useNavigate()
     const handleSubmission = (): void => {
         handleCreateRoom()
     }
+
+    useEffect(() => {
+        if (generatedRoomId === "") {
+            setroomIdGenerated(true)
+        } else if (generatedRoomId?.length > 0) {
+            setroomIdGenerated(false)
+        }
+    }, [])
 
     const handleJoinSubmission = (): void => {
         if (roomId === "") {
@@ -43,15 +56,18 @@ export function CustomDialog({ open, setopen, setroomId, roomId, handleCreateRoo
                         </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="roomId" className="text-right">
-                                RoomId
-                            </Label>
-                            <Input id="roomId" className="col-span-3" disabled />
+                        <div className="grid grid-cols-1 grid-rows-1 items-center justify-center gap-4">
+                            <div className=" w-full p-2 flex items-center">
+                                <Input id="roomId" className=" w-[90%] inline-block" disabled={roomIdgenerated} value={generatedRoomId!}
+                                />
+                                <ClipboardWithIcon className="inline-block" valueToCopy={generatedRoomId ? generatedRoomId : ""} />
+
+                            </div>
+
                         </div>
                     </div>
                     <DialogFooter>
-                        <Button type="submit" onClick={handleSubmission}>Generate room Id</Button>
+                        {generatedRoomId !== "" ? <Button onClick={() => navigate(`/call/${generatedRoomId}`)}>Join Call</Button> : <Button type="submit" onClick={handleSubmission}>Generate room Id</Button>}
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

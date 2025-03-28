@@ -39,9 +39,11 @@ function UserContextProvider({ children }: Prop) {
                     createdAt: userDetails.createdAt,
                     updatedAt: userDetails.updatedAt
                 })
+                localStorage.setItem("jwt", "true")
             } else {
                 setAuth(false)
                 setUser(null)
+                localStorage.removeItem("jwt")
                 await handleLogout()
             }
         } catch (error) {
@@ -57,6 +59,7 @@ function UserContextProvider({ children }: Prop) {
             if (response.status === 200) {
                 setAuth(false)
                 setUser(null)
+                localStorage.removeItem("jwt")
             }
         } catch (error) {
             console.log("Error in Logging Out", error)

@@ -16,6 +16,16 @@ function Navbar() {
     const { auth, handleLogout } = useAuth()
     const location = useLocation()
     const navigate = useNavigate()
+    const [isAuth, setisAuth] = useState(false)
+
+    useEffect(() => {
+        let authStatus = localStorage.getItem("jwt")
+        if (authStatus === "true") {
+            setisAuth(true)
+        } else {
+            setisAuth(false)
+        }
+    }, [isAuth, navigate])
 
     // Close menu when route changes
     useEffect(() => {
@@ -38,17 +48,17 @@ function Navbar() {
     const navItems: NavItem[] = [
         {
             name: "Login",
-            status: !auth,
+            status: !isAuth,
             url: "/Login"
         },
         {
             name: "Signup",
-            status: !auth,
+            status: !isAuth,
             url: "/signup"
         },
         {
             name: "Support",
-            status: auth,
+            status: isAuth,
             url: "/support"
         },
 
@@ -57,7 +67,7 @@ function Navbar() {
     const LogOut = async () => {
         await handleLogout()
 
-        navigate("/")
+        navigate("/Login")
     }
 
     return (
@@ -86,7 +96,7 @@ function Navbar() {
                                     </Link>
                                 )
                             ))}
-                            {auth && <button onClick={LogOut} className='px-4 py-2 bg-red-500 rounded-md text-sm font-medium transition-colors duration-200 ease-in-out'>Logout</button>}
+                            {isAuth && <button onClick={LogOut} className='px-4 py-2 bg-red-500 rounded-md text-sm font-medium transition-colors duration-200 ease-in-out'>Logout</button>}
                         </div>
                     </div>
 
