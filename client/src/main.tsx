@@ -4,14 +4,17 @@ import './index.css'
 import App from './App.tsx'
 import UserContextProvider from './Context/userContextProvider.tsx'
 import { GoogleOAuthProvider } from '@react-oauth/google'
+import CallContextProvider from './Context/callContextProvider.tsx'
 
 createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
+
+  <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
+    <CallContextProvider>
       <UserContextProvider>
         <App />
       </UserContextProvider>
-    </GoogleOAuthProvider>
+    </CallContextProvider>
+  </GoogleOAuthProvider>
 
-  </StrictMode>,
+
 )

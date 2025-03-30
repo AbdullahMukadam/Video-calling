@@ -1,15 +1,37 @@
-import path from 'path'
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import tailwindcss from '@tailwindcss/vite'
-import flowbiteReact from "flowbite-react/plugin/vite";
+import path from 'path';
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
+import flowbiteReact from 'flowbite-react/plugin/vite';
+import { NodeGlobalsPolyfillPlugin } from '@esbuild-plugins/node-globals-polyfill';
+import rollupNodePolyFill from 'rollup-plugin-node-polyfills';
 
-// https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss(), flowbiteReact()],
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
+  optimizeDeps: {
+    esbuildOptions: {
+      define: {
+        global: 'globalThis',
+      },
+      plugins: [
+        NodeGlobalsPolyfillPlugin({
+          buffer: true,
+          process: true,
+        }),
+      ],
     },
   },
-})
+  build: {
+    rollupOptions: {
+      plugins: [rollupNodePolyFill()],
+    },
+  },
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+      stream: 'stream-browserify',
+      util: 'util',
+      buffer: 'buffer',
+    },
+  },
+});

@@ -15,6 +15,8 @@ interface authContextType {
     loading: boolean;
     CheckAuth: () => Promise<void>;
     handleLogout: () => Promise<void>;
+    myId: string;
+    setMyId: React.Dispatch<React.SetStateAction<string>>
 }
 
 const AuthContext = createContext<authContextType | undefined>(undefined)
@@ -24,7 +26,7 @@ function UserContextProvider({ children }: Prop) {
     const [user, setUser] = useState<User | null>(null)
     const [auth, setAuth] = useState<boolean>(false)
     const [loading, setloading] = useState<boolean>(false)
-
+    const [myId, setMyId] = useState<string>("")
 
     const CheckAuth = async (): Promise<void> => {
         try {
@@ -70,7 +72,7 @@ function UserContextProvider({ children }: Prop) {
         CheckAuth()
     }, [])
     return (
-        <AuthContext.Provider value={{ user, setUser, auth, setAuth, CheckAuth, loading, handleLogout }}>
+        <AuthContext.Provider value={{ user, setUser, auth, setAuth, CheckAuth, loading, handleLogout, myId, setMyId }}>
             {children}
         </AuthContext.Provider>
     )

@@ -4,19 +4,14 @@ import { Video, Users, Calendar, Settings, LogOut } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '../ui/button';
 import { CustomDialog } from '../Shadcn/Dialog';
-import { v4 as uuidv4 } from 'uuid';
-import { getSocket } from '@/Socket';
-import { toast } from 'sonner';
+
 
 function Home() {
-  const { auth, user } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [open, setopen] = useState(false)
-  const [roomId, setroomId] = useState("")
   const [dialogmethod, setdialogmethod] = useState("")
   const [isAuth, setisAuth] = useState(false)
-  const [loading, setloading] = useState(false)
-  const [generatedRoomId, setgeneratedRoomId] = useState<string>("")
 
   useEffect(() => {
     let authStatus = localStorage.getItem("jwt")
@@ -27,49 +22,7 @@ function Home() {
     }
   }, [isAuth, navigate])
 
-  const handleCreateRoom = (): void => {
-    setloading(true)
-    const callId = uuidv4();
-    setgeneratedRoomId(callId)
-
-    const socket = getSocket()
-
-    socket.emit("CreateCall", {
-      callId: callId,
-      callerId: user?.id,
-      callerName: user?.email
-    })
-    setloading(false)
-
-    socket.on("callCreated", (data) => {
-      const { callId } = data
-      if (callId) toast("Room has been created , now copy and share the room id with your friend to join the room")
-    })
-
-  }
-
-  const handleJoinRoom = (): void => {
-    const socket = getSocket()
-
-    socket.emit("JoinCall", {
-      callId: roomId,
-      joinerId: user?.id,
-      joinerName: user?.email
-    })
-
-    socket.on("CallReady", (data) => {
-      const { callId } = data;
-      if (callId) {
-        toast(`You will joined to the Call Shortly, call Id: ${roomId}`)
-        navigate(`/call/${callId}`)
-      }
-    })
-
-    socket.on("error", (data) => {
-      const { message } = data;
-      if (message) toast("Call not found")
-    })
-  }
+ 
 
   const handleDialogOpen = (method: string): void => {
     setopen(true)
@@ -124,7 +77,7 @@ function Home() {
             </div>
           </div>
 
-          <CustomDialog generatedRoomId={generatedRoomId} open={open} setopen={setopen} dialogmethod={dialogmethod} roomId={roomId} setroomId={setroomId} handleCreateRoom={handleCreateRoom} handleJoinRoom={handleJoinRoom} />
+          <CustomDialog open={open} setopen={setopen} dialogmethod={dialogmethod} userId={user?.id} userEmail={user?.email}  />
 
           {/* Quick Actions */}
           <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">

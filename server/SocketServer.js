@@ -1,43 +1,51 @@
-
+import { v4 as uuidv4 } from 'uuid';
 const calls = {};
 
 const SocketEvents = (socket, io) => {
     socket.on("CreateCall", (data) => {
-        const { callId, callerId, callerName } = data;
+        const { callerId, callerEmail } = data;
 
+        const callId = uuidv4()
         calls[callId] = {
             callerId: callerId,
-            callerName: callerName,
+            callerEmail: callerEmail,
             callersocketId: socket.id
         }
 
         socket.join(callerId)
 
-        socket.emit('callCreated', { callId });
+        socket.emit('callCreated', { callersocketId: socket.id, roomId: callId, callerId: callerId });
     })
 
     socket.on("JoinCall", (data) => {
-        const { callId, joinerId, joinerName } = data;
+        const { callId, joinerId, joinerEmail } = data;
 
         if (calls[callId]) {
             calls[callId].joinerId = joinerId
-            calls[callId].joinerName = joinerName
+            calls[callId].joinerEmail = joinerEmail
             calls[callId].joinerSocketId = socket.id
 
 
             socket.join(callId)
+            console.log(calls)
 
             io.to(callId).emit("CallReady", {
                 callerId: calls[callId].callerId,
-                callerName: calls[callId].callerName,
+                callerEmail: calls[callId].callerEmail,
+                callerSocketId: calls[callId].callersocketId,
                 joinerId: joinerId,
-                joinerName: joinerName,
+                joinerEmail: joinerEmail,
+                joinerSocketId: socket.id,
                 callId: callId
             })
+
         } else {
             socket.emit('error', { message: 'Call not found' });
         }
     })
+
+
+
 }
 
 export { SocketEvents }

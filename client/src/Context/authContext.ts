@@ -9,6 +9,8 @@ interface authContextType {
     loading: boolean;
     CheckAuth: () => Promise<void>;
     handleLogout: () => Promise<void>;
+    myId: string;
+    setMyId: React.Dispatch<React.SetStateAction<string>>
 }
 
 export const AuthContext = createContext<authContextType>({
@@ -19,6 +21,8 @@ export const AuthContext = createContext<authContextType>({
     loading: false,
     CheckAuth: () => Promise.resolve(),
     handleLogout: () => Promise.resolve(),
+    myId: "",
+    setMyId: () => { }
 })
 
 export const AuthContextProvider = AuthContext.Provider
