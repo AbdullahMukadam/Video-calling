@@ -59,6 +59,10 @@ const SocketEvents = (socket, io) => {
         }
     })
 
+    socket.on("sendOffer", (data) => {
+        const { from, to, offer } = data;
+        console.log(`Received Offer from ${from} to ${to} and offer:${offer}`)
+    })
 
 
 }
