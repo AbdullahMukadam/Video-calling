@@ -28,7 +28,7 @@ interface Props {
 export function CustomDialog({ open, setopen, dialogmethod, userId, userEmail }: Props) {
     const [roomIdgenerated, setroomIdGenerated] = useState(false);
     const [RoomId, setroomId] = useState("");
-    const { roomId, setRoomId, setMyId, setMySocketId, setjoinerId, setjoinerSocketId } = useCall();
+    const { roomId, setRoomId, setMyId, setMySocketId } = useCall();
     const navigate = useNavigate();
 
     const handleSubmission = async () => {
@@ -52,12 +52,7 @@ export function CustomDialog({ open, setopen, dialogmethod, userId, userEmail }:
             return;
         }
 
-        const res = await handleRoomJoining(RoomId, userId, userEmail, {
-            setjoinerId,
-            setjoinerSocketId,
-            setMyId,
-            setMySocketId,
-        });
+        const res = await handleRoomJoining(RoomId, userId, userEmail);
 
         if (res === "success") {
             toast("You'll be joining the room shortly, please wait");

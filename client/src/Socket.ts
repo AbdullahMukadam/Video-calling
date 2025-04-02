@@ -54,12 +54,6 @@ export const handleRoomJoining = (
     roomId: string,
     userId: string,
     userEmail: string,
-    callbacks: {
-        setjoinerId: (id: string) => void;
-        setjoinerSocketId: (id: string) => void;
-        setMyId: (id: string) => void;
-        setMySocketId: (id: string) => void;
-    }
 ): Promise<string> => {
     return new Promise((resolve) => {
         const socket = initializeSocket();
@@ -71,12 +65,12 @@ export const handleRoomJoining = (
         });
 
         socket.once("CallReady", (data) => {
-            callbacks.setjoinerId(data.joinerId);
-            callbacks.setjoinerSocketId(data.joinerSocketId);
-            callbacks.setMyId(userId);
-            callbacks.setMySocketId(socket?.id || "");
             resolve("success");
         });
+
+        socket.once("roomFull", (data) => {
+            resolve(data.message || "Room is full")
+        })
 
         socket.once("error", (error) => {
             resolve(error.message || "Failed to join room");

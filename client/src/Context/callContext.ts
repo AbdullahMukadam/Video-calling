@@ -7,12 +7,6 @@ interface callContextType {
     setRoomId: React.Dispatch<React.SetStateAction<string>>;
     MySocketId: string;
     setMySocketId: React.Dispatch<React.SetStateAction<string>>;
-    joinerId: string;
-    setjoinerId: React.Dispatch<React.SetStateAction<string>>;
-    joinerSocketId: string;
-    setjoinerSocketId: React.Dispatch<React.SetStateAction<string>>;
-    remoteStream: MediaStream | null;
-    setRemoteStream: React.Dispatch<React.SetStateAction<MediaStream | null>>;
 }
 
 export const CallContext = createContext<callContextType>({
@@ -22,12 +16,6 @@ export const CallContext = createContext<callContextType>({
     setRoomId: () => { },
     MySocketId: "",
     setMySocketId: () => { },
-    joinerId: "",
-    setjoinerId: () => { },
-    joinerSocketId: "",
-    setjoinerSocketId: () => { },
-    remoteStream: null,
-    setRemoteStream: () => {}
 })
 
 export const CallContextProvider = CallContext.Provider
