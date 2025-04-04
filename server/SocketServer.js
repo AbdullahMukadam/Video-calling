@@ -62,8 +62,31 @@ const SocketEvents = (socket, io) => {
     socket.on("sendOffer", (data) => {
         const { from, to, offer } = data;
         console.log(`Received Offer from ${from} to ${to} and offer:${offer}`)
+        io.to(to).emit("receivedOfferFromServer", {
+            offer: offer,
+            from: from,
+            me: to
+        })
     })
 
+
+    socket.on("sendAnswer", (data) => {
+        const { answer, from, to, roomId } = data;
+        console.log(`Received Answer from ${from} to ${to} and answer:${answer}`)
+        io.to(to).emit("receivedAnswerFromServer", {
+            answer: answer,
+            from: calls[roomId].joinerEmail,
+            to: calls[roomId].callerEmail
+        })
+    })
+
+    socket.on("iceCandidate", (data) => {
+        const { candidate, from, to } = data;
+        io.to(to).emit("ice-candidate", {
+            candidate,
+            from
+        })
+    })
 
 }
 
