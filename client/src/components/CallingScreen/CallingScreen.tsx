@@ -1,9 +1,11 @@
 import { useCall } from '@/Context/callContextProvider';
-import { initializeSocket } from '@/Socket'
+import { disconnectSocket, initializeSocket } from '@/Socket'
 import peerService from '@/utils/peerService/peerService';
-import React, { useCallback, useEffect, useRef, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 import { Socket } from 'socket.io-client'
+import { Button } from '../ui/button';
+import ReactPlayer from "react-player"
 
 interface JoinedUserData {
     joinerEmail: string;
@@ -17,64 +19,116 @@ interface ReceivedOffer {
     me: string | number
 }
 
+interface AnswerData {
+    answer: RTCSessionDescriptionInit;
+    from: string | number;
+    to: string | number;
+    roomId?: string;
+}
+
+interface IceCandidateData {
+    candidate: RTCIceCandidate;
+    from: string | number;
+    to: string | number;
+    roomId?: string;
+}
+
+interface ReceivedNegoOffer {
+    offer: RTCSessionDescriptionInit;
+    from: string;
+    to: string | number
+}
+
+interface ReceivedNegoAnswer {
+    answer: RTCSessionDescriptionInit;
+    from: string;
+    to: string | number
+}
+
 function CallingScreen() {
     const params = useParams();
     const [isParticipantPresent, setIsParticipantPresent] = useState(false);
     const { MyId, MySocketId } = useCall()
     const socketInstance = useRef<Socket | null>(null);
-    const mYvideo = useRef<HTMLVideoElement | null>(null)
     const [myStream, setmyStream] = useState<MediaStream | null>(null)
+    const [remoteStream, setremoteStream] = useState<MediaStream | null>(null)
     const [joinersocketId, setjoinerSocketId] = useState<string | null>(null)
-
-    useEffect(() => {
-        socketInstance.current = initializeSocket();
-
-
-        console.log('Socket initialized:', socketInstance.current?.id);
-
-        /*  navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then((streams) => {
-             setmyStream(streams)
-             mYvideo.current.srcObject = streams
-         }).catch((error) => {
-             console.log("An Error Occured in Getting Media", error)
-         }) */
-
-        return () => {
-
-        };
-    }, []);
-
-    const handleStartCall = useCallback(async (joinerSocketId: string | number) => {
-
-        await peerService.iceCandidate((candidate) => {
-            socketInstance.current?.emit("iceCandidate", {
-                candidate,
-                from: MySocketId,
-                to: joinerSocketId
-            })
-        })
-
-        const offer = await peerService.getOffer()
-        if (offer) handleSendOffertoServer(offer, joinerSocketId)
-    }, [],)
-
+    const navigate = useNavigate()
 
     const handleSendOffertoServer = useCallback(async (offer: RTCSessionDescriptionInit, joinerSocketId: string | number) => {
+        try {
+            socketInstance.current?.emit("sendOffer", {
+                from: MySocketId,
+                to: joinerSocketId,
+                offer: offer
+            })
+        } catch (error) {
+            console.error("Error sending offer:", error)
+        }
+    }, [MySocketId])
 
-        socketInstance.current?.emit("sendOffer", {
-            from: MySocketId,
-            to: joinerSocketId,
-            offer: offer
-        })
+    const handleStartCall = useCallback(async (joinerSocketId: string | number) => {
+        try {
+            const streams = await navigator.mediaDevices.getUserMedia({
+                video: true,
+                audio: true
+            });
 
-    }, [],)
+            setmyStream(streams)
+            peerService.sendStream(streams)
+
+            await peerService.iceCandidate((candidate) => {
+                socketInstance.current?.emit("iceCandidate", {
+                    candidate,
+                    from: MySocketId,
+                    to: joinerSocketId
+                })
+            })
+
+            const offer = await peerService.getOffer()
+            if (offer) {
+                await handleSendOffertoServer(offer, joinerSocketId)
+
+            }
+        } catch (error) {
+            console.error("Error in handleStartCall:", error)
+        }
+    }, [MySocketId, handleSendOffertoServer])
+
+
+
+    useEffect(() => {
+        if (peerService.peer) {
+            const trackHandler = async (ev: RTCTrackEvent) => {
+                const remoteStream = ev.streams;
+                console.log("GOT TRACKS!!", remoteStream[0]);
+                if (remoteStream && remoteStream[0]) {
+                    setremoteStream(remoteStream[0]);
+                }
+            };
+
+            peerService.peer.addEventListener("track", trackHandler);
+
+            return () => {
+                peerService.peer?.removeEventListener("track", trackHandler);
+            };
+        }
+    }, []);
 
     const handleReceivedOfferFromServer = useCallback(async (data: ReceivedOffer) => {
-        const { offer, from, me } = data
-        console.log("Received the Offer from The Server:", offer, "from this user:", from, "to me:", me)
-        if (offer && from && me) {
+        try {
+            const { offer, from, me } = data
+            console.log("Received the Offer from The Server:", offer, "from this user:", from, "to me:", me)
 
-            peerService.iceCandidate((candidate) => {
+            const streams = await navigator.mediaDevices.getUserMedia({
+                video: true,
+                audio: true
+            });
+
+            setmyStream(streams)
+            peerService.sendStream(streams)
+
+            await peerService.iceCandidate((candidate) => {
                 socketInstance.current?.emit("iceCandidate", {
                     candidate,
                     from: me,
@@ -90,65 +144,256 @@ function CallingScreen() {
                 to: from,
                 roomId: params.id
             })
-        }
-    }, [],)
 
-    const handleReceiveAnswerFromServer = useCallback(async (data) => {
-        const { answer, from, to } = data;
-        await peerService.setAnswer(answer)
-    }, [],)
+        } catch (error) {
+            console.error("Error handling received offer:", error)
+        }
+    }, [params.id])
+
+    const handlesendstream = useCallback(async () => {
+        if (myStream) {
+            peerService.sendStream(myStream!)
+        } else {
+            console.error("Stream is not Present")
+        }
+
+    }, [myStream])
+
+    const handleReceiveAnswerFromServer = useCallback(async (data: AnswerData) => {
+        try {
+            const { answer, from, to } = data;
+            await peerService.setAnswer(answer)
+            handlesendstream()
+        } catch (error) {
+            console.error("Error handling received answer:", error)
+        }
+    }, [handlesendstream])
+
 
 
     const handleUserRoomJoined = useCallback((data: JoinedUserData) => {
-        //console.log("UserJoined event received:", data);
-        const { joinerEmail, joinerId, joinerSocketId } = data;
+        try {
+            const { joinerEmail, joinerId, joinerSocketId } = data;
 
-        if (joinerEmail && joinerId && joinerSocketId) {
-            setIsParticipantPresent(true);
-            setjoinerSocketId(joinerSocketId.toString())
-            console.log(`User joined room, email:${joinerEmail}, id:${joinerId}, socketId:${joinerSocketId}`);
-            handleStartCall(joinerSocketId)
+            if (joinerEmail && joinerId && joinerSocketId) {
+                setjoinerSocketId(joinerSocketId.toString())
+                setIsParticipantPresent(true);
+                console.log(`User joined room, email:${joinerEmail}, id:${joinerId}, socketId:${joinerSocketId}`);
+                handleStartCall(joinerSocketId)
+            }
+        } catch (error) {
+            console.error("Error handling user joined:", error)
         }
-    }, []);
+    }, [handleStartCall])
 
-    const handleIceCandidates = useCallback(async (data) => {
-        const { candidate, from } = data;
-        await peerService.addIceCandidate(candidate)
+    const handleIceCandidates = useCallback(async (data: IceCandidateData) => {
+        try {
+            const { candidate, from } = data;
+            await peerService.addIceCandidate(candidate)
+        } catch (error) {
+            console.error("Error handling ICE candidate:", error)
+        }
+    }, [])
 
-    }, []);
+
+
+    const handleHandleNegoNeeded = useCallback(async () => {
+        try {
+            const offer = await peerService.getOffer();
+            console.log("mysocketId:", MySocketId, "joinersocketid:", joinersocketId)
+            socketInstance.current?.emit("nego-needed", {
+                offer,
+                from: MySocketId,
+                to: joinersocketId
+            })
+
+        } catch (error) {
+            console.error("Error in handleHandleNegoNeeded:", error)
+        }
+
+    }, [MySocketId, joinersocketId],)
+
+    const handleNegoOffer = useCallback(async (data: ReceivedNegoOffer) => {
+        try {
+            const { offer, from, to } = data;
+            const answer = await peerService.generateAnswer(offer)
+            socketInstance.current?.emit("nego-needed-done", {
+                answer,
+                from: to,
+                to: from
+            })
+        } catch (error) {
+            console.error("Error in handleNegoOffer:", error)
+        }
+
+    }, [],)
+
+    const handleNegoAnswer = useCallback(async (data: ReceivedNegoAnswer) => {
+        try {
+            const { answer, from, to } = data
+            await peerService.setAnswer(answer)
+
+        } catch (error) {
+            console.error("Error in handleNegoAnswer:", error)
+        }
+
+    }, [],)
+
+
 
     useEffect(() => {
-        if (socketInstance.current) {
-            //console.log("Setting up UserJoined listener on room:", params.id);
+        peerService.peer?.addEventListener("negotiationneeded", handleHandleNegoNeeded)
 
-            socketInstance.current.on("UserJoined", handleUserRoomJoined);
-            socketInstance.current.on("receivedOfferFromServer", handleReceivedOfferFromServer)
-            socketInstance.current.on("receivedAnswerFromServer", handleReceiveAnswerFromServer)
-            socketInstance.current.on("ice-candidate", handleIceCandidates)
+        return () => {
+            peerService.peer?.removeEventListener("negotiationneeded", handleHandleNegoNeeded)
+        }
+    }, [handleHandleNegoNeeded])
+
+    useEffect(() => {
+        const socket = initializeSocket();
+        socketInstance.current = socket;
+
+        console.log('Socket initialized:', socket.id);
+
+        const getMedia = async () => {
+            try {
+                const streams = await navigator.mediaDevices.getUserMedia({
+                    video: true,
+                    audio: true
+                });
+
+                setmyStream(streams)
+                console.log("my streams:", streams)
+
+            } catch (error) {
+                console.error("Error getting user media:", error)
+            }
+        }
+
+        getMedia()
+
+        return () => {
+            if (myStream) {
+                myStream.getTracks().forEach(track => {
+                    track.stop();
+                });
+            }
+
+            if (remoteStream) {
+                remoteStream.getTracks().forEach(track => {
+                    track.stop();
+                });
+            }
+
+            if (peerService.peer) {
+                peerService.cleanup()
+            }
+
+            socket.disconnect()
+            socketInstance.current = null
+        }
+
+    }, []);
+
+    const handleEndCall = useCallback(() => {
+        if (myStream) {
+            myStream.getTracks().forEach(track => {
+                track.stop();
+            });
+        }
+
+        if (remoteStream) {
+            remoteStream.getTracks().forEach(track => {
+                track.stop();
+            });
+        }
+
+        if (peerService.peer) {
+            peerService.cleanup()
+        }
+
+        setIsParticipantPresent(false)
+        setmyStream(null)
+        setremoteStream(null)
+        setjoinerSocketId(null)
+
+        if (socketInstance.current) {
+            disconnectSocket()
+            socketInstance.current?.disconnect()
+            socketInstance.current = null
+        }
+
+
+        navigate("/")
+    }, [myStream, navigate, remoteStream],)
+
+
+
+
+    useEffect(() => {
+        const socket = socketInstance.current;
+
+        if (socket) {
+            socket.on("UserJoined", handleUserRoomJoined);
+            socket.on("receivedOfferFromServer", handleReceivedOfferFromServer);
+            socket.on("receivedAnswerFromServer", handleReceiveAnswerFromServer);
+            socket.on("ice-candidate", handleIceCandidates);
+            socket.on("nego-needed-offer-server", handleNegoOffer)
+            socket.on("nego-done-final", handleNegoAnswer)
 
             return () => {
-                socketInstance.current?.off("UserJoined", handleUserRoomJoined);
-                socketInstance.current?.off("receivedOfferFromServer", handleReceivedOfferFromServer)
-                socketInstance.current?.off("receivedAnswerFromServer", handleReceiveAnswerFromServer)
-                socketInstance.current?.off("ice-candidate", handleIceCandidates)
+                socket.off("UserJoined", handleUserRoomJoined);
+                socket.off("receivedOfferFromServer", handleReceivedOfferFromServer);
+                socket.off("receivedAnswerFromServer", handleReceiveAnswerFromServer);
+                socket.off("ice-candidate", handleIceCandidates);
+                socket.off("nego-needed-offer-server", handleNegoOffer);
+                socket.off("nego-done-final", handleNegoAnswer)
             };
         }
-    }, [handleUserRoomJoined, params.id, handleReceivedOfferFromServer, handleReceiveAnswerFromServer]);
-
-    if (!isParticipantPresent) {
-        return (
-            <div className='w-full p-2'>
-                <h1 className='text-xl font-semibold block'>No Participant is Present, Please share the room Id with the participant to join the room.</h1>
-                <h2>Room Id: {params.id}</h2>
-                {/* <video ref={mYvideo} playsInline autoPlay ></video> */}
-            </div>
-        );
-    }
+    }, [handleUserRoomJoined, handleReceivedOfferFromServer, handleReceiveAnswerFromServer, handleIceCandidates, handleNegoOffer, handleNegoAnswer]);
 
     return (
-        <div className='w-full p-4'>
-            <h2 className='text-xl font-semibold block'>Someone has Joined in the room</h2>
+        <div className="w-full max-w-6xl mx-auto p-4 bg-white rounded-lg shadow-md">
+            
+            <div className="flex items-center justify-between mb-6 border-b pb-4">
+                <h2 className="text-xl font-semibold text-gray-800">Room ID: {params.id}</h2>
+                <Button onClick={handleEndCall}>End Call</Button>
+            </div>
 
+           
+            <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-6">
+               
+                <div className="relative rounded-lg overflow-hidden bg-gray-100 ">
+                    <ReactPlayer
+                        url={myStream!}
+                        playing
+                        width="100%"
+                        height="100%"
+                        muted={true}
+                        style={{ objectFit: 'cover' }}
+                    />
+                    <div className="absolute bottom-3 left-3 bg-black bg-opacity-60 text-white px-3 py-1 rounded-md text-sm">
+                        You
+                    </div>
+                </div>
+
+               
+                <div className="relative rounded-lg overflow-hidden bg-gray-100 ">
+                    <ReactPlayer
+                        url={remoteStream!}
+                        playing
+                        width="100%"
+                        height="100%"
+                        muted={true}
+                        style={{ objectFit: 'cover' }}
+                    />
+                    <div className="absolute bottom-3 left-3 bg-black bg-opacity-60 text-white px-3 py-1 rounded-md text-sm">
+                        Remote
+                    </div>
+
+
+                </div>
+            </div>
         </div>
     );
 }

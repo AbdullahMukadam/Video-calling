@@ -88,6 +88,24 @@ const SocketEvents = (socket, io) => {
         })
     })
 
+
+    socket.on("nego-needed", (data) => {
+        const { offer, from, to } = data;
+        console.log("received nego-offer:", offer, "from this:", from, "to this:", to)
+        io.to(to).emit("nego-needed-offer-server", {
+            offer, from, to
+        })
+    })
+
+    socket.on("nego-needed-done", (data) => {
+        const { answer, from, to } = data;
+        console.log("received nego-answer:", answer, "from this:", from, "to this:", to)
+        io.to(to).emit("nego-done-final", {
+            answer,
+            from,
+            to
+        })
+    })
 }
 
 export { SocketEvents }
