@@ -15,6 +15,7 @@ const calls = pgTable("calls", {
     callId: text("callId").notNull(),
     callerId: text("callerId").notNull(),
     joinerId: text("joinerId"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
 })
 
 

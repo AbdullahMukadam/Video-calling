@@ -9,6 +9,7 @@ import ReactPlayer from "react-player"
 import axios from 'axios';
 import { Config } from '@/API/Config';
 import { toast } from 'sonner';
+import { useAuth } from '@/Context/userContextProvider';
 
 interface JoinedUserData {
     joinerEmail: string;
@@ -51,6 +52,7 @@ interface ReceivedNegoAnswer {
 function CallingScreen() {
     const params = useParams();
     const [isParticipantPresent, setIsParticipantPresent] = useState(false);
+    const { user } = useAuth()
     const { MyId, MySocketId } = useCall()
     const socketInstance = useRef<Socket | null>(null);
     const [myStream, setmyStream] = useState<MediaStream | null>(null)
@@ -328,21 +330,22 @@ function CallingScreen() {
             socketInstance.current = null
         }
 
-        try {
-            const callEnded = await axios.post(`${Config.baseUrl}/call/add-call-history`, {
-                callId: params.id,
-                callerId: MyId,
-                joinerId: joinerId
-            })
-            if (callEnded.status === 200) {
-                toast("Call History Saved")
-                navigate("/")
-            }
-        } catch (error: any) {
-            toast(error.message || "Error in Ending Call")
+
+        console.log("My Id :", user?.id)
+        const callEnded = await axios.post(`${Config.baseUrl}/call/add-call-history`, {
+            callId: params.id,
+            callerId: user?.id,
+            joinerId: joinerId
+        })
+        if (callEnded.status === 409) {
+            navigate("/")
+        } else if (callEnded.status === 200) {
+            toast("Call History Saved")
+            navigate("/")
         }
 
-    }, [MyId, joinerId, myStream, navigate, params.id, remoteStream],)
+
+    }, [joinerId, myStream, navigate, params.id, remoteStream, user?.id],)
 
 
 

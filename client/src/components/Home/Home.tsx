@@ -28,19 +28,22 @@ function Home() {
 
   const getCallHistory = async () => {
     try {
-      const calls = await axios.get(`${Config.baseUrl}/call/get-all-calls`)
+      const calls = await axios.post(`${Config.baseUrl}/call/get-all-calls`, {
+        userId: user?.id
+      })
       if (calls.status === 200) {
-        //setcalls(calls.data)
-        console.log(calls)
+        setcalls(calls.data.callHistory)
       }
     } catch (error: any) {
       console.log("An Error Occured in getting Calls History")
-      toast(error.message || "An Error Occured in getting Calls History")
+
     }
   }
 
   useEffect(() => {
-    getCallHistory()
+    if (calls.length === 0) {
+      getCallHistory()
+    }
   }, [])
 
 
@@ -99,74 +102,50 @@ function Home() {
 
           <CustomDialog open={open} setopen={setopen} dialogmethod={dialogmethod} userId={user?.id} userEmail={user?.email} />
 
-          {/* Quick Actions */}
-          <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            <div className="bg-white overflow-hidden shadow rounded-lg">
-              <div className="px-4 py-5 sm:p-6">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0 bg-indigo-100 rounded-md p-3">
-                    <Calendar className="h-6 w-6 text-indigo-600" />
-                  </div>
-                  <div className="ml-5">
-                    <h3 className="text-lg font-medium text-gray-900">Scheduled Meetings</h3>
-                    <p className="mt-1 text-sm text-gray-500">You have 2 upcoming meetings</p>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-gray-50 px-4 py-4 sm:px-6">
-                <div className="text-sm">
-                  <a href="#" className="font-medium text-indigo-600 hover:text-indigo-500">View all meetings</a>
-                </div>
-              </div>
-            </div>
 
-            <div className="bg-white overflow-hidden shadow rounded-lg">
-              <div className="px-4 py-5 sm:p-6">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0 bg-indigo-100 rounded-md p-3">
-                    <Users className="h-6 w-6 text-indigo-600" />
-                  </div>
-                  <div className="ml-5">
-                    <h3 className="text-lg font-medium text-gray-900">Recent Contacts</h3>
-                    <p className="mt-1 text-sm text-gray-500">Connect with your team</p>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-gray-50 px-4 py-4 sm:px-6">
-                <div className="text-sm">
-                  <a href="#" className="font-medium text-indigo-600 hover:text-indigo-500">View all contacts</a>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white overflow-hidden shadow rounded-lg">
-              <div className="px-4 py-5 sm:p-6">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0 bg-indigo-100 rounded-md p-3">
-                    <Settings className="h-6 w-6 text-indigo-600" />
-                  </div>
-                  <div className="ml-5">
-                    <h3 className="text-lg font-medium text-gray-900">Settings</h3>
-                    <p className="mt-1 text-sm text-gray-500">Configure your preferences</p>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-gray-50 px-4 py-4 sm:px-6">
-                <div className="text-sm">
-                  <a href="#" className="font-medium text-indigo-600 hover:text-indigo-500">Manage settings</a>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Recent Activity */}
           <div className="mt-8">
             <div className="bg-white shadow overflow-hidden sm:rounded-md">
               <div className="px-4 py-5 border-b border-gray-200 sm:px-6">
                 <h3 className="text-lg leading-6 font-medium text-gray-900">Call History</h3>
               </div>
-              <ul className="divide-y divide-gray-200">
-
+              <ul className="space-y-4">
+                {calls.length > 0 ? (
+                  calls.map((callHistory) => (
+                    <li
+                      key={callHistory?.callId}
+                      className="w-full p-4 rounded-lg border border-gray-300 hover:border-blue-500 transition-colors duration-200 bg-white shadow-sm hover:shadow-md"
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-blue-100 rounded-full">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-600" viewBox="0 0 20 20" fill="currentColor">
+                              <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
+                            </svg>
+                          </div>
+                          <div>
+                            <h3 className="text-lg font-medium text-gray-900">Call ID: {callHistory?.callId}</h3>
+                            <p className="text-sm text-gray-500">
+                              {new Date(callHistory?.createdAt).toLocaleString()}
+                            </p>
+                          </div>
+                        </div>
+                        <button className="text-sm font-medium text-blue-600 hover:text-blue-800">
+                          View Details
+                        </button>
+                      </div>
+                    </li>
+                  ))
+                ) : (
+                  <li className="text-center p-6">
+                    <div className="flex flex-col items-center justify-center space-y-2">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                      </svg>
+                      <p className="text-lg font-medium text-gray-500">No Previous Calls</p>
+                      <p className="text-sm text-gray-400">Your call history will appear here</p>
+                    </div>
+                  </li>
+                )}
               </ul>
             </div>
           </div>
