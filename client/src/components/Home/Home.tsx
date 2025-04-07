@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../Context/userContextProvider';
-import { Video, Users, Calendar, Settings, LogOut } from 'lucide-react';
+import { Video, Users, Calendar, Settings } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '../ui/button';
 import { CustomDialog } from '../Shadcn/Dialog';
+import { toast } from 'sonner';
+import axios from 'axios';
+import { Config } from '@/API/Config';
 
 
 function Home() {
@@ -12,9 +15,10 @@ function Home() {
   const [open, setopen] = useState(false)
   const [dialogmethod, setdialogmethod] = useState("")
   const [isAuth, setisAuth] = useState(false)
+  const [calls, setcalls] = useState<Array<object>>([])
 
   useEffect(() => {
-    let authStatus = localStorage.getItem("jwt")
+    const authStatus = localStorage.getItem("jwt")
     if (authStatus === "true") {
       setisAuth(true)
     } else {
@@ -22,7 +26,23 @@ function Home() {
     }
   }, [isAuth, navigate])
 
- 
+  const getCallHistory = async () => {
+    try {
+      const calls = await axios.get(`${Config.baseUrl}/call/get-all-calls`)
+      if (calls.status === 200) {
+        //setcalls(calls.data)
+        console.log(calls)
+      }
+    } catch (error: any) {
+      console.log("An Error Occured in getting Calls History")
+      toast(error.message || "An Error Occured in getting Calls History")
+    }
+  }
+
+  useEffect(() => {
+    getCallHistory()
+  }, [])
+
 
   const handleDialogOpen = (method: string): void => {
     setopen(true)
@@ -77,7 +97,7 @@ function Home() {
             </div>
           </div>
 
-          <CustomDialog open={open} setopen={setopen} dialogmethod={dialogmethod} userId={user?.id} userEmail={user?.email}  />
+          <CustomDialog open={open} setopen={setopen} dialogmethod={dialogmethod} userId={user?.id} userEmail={user?.email} />
 
           {/* Quick Actions */}
           <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -143,37 +163,10 @@ function Home() {
           <div className="mt-8">
             <div className="bg-white shadow overflow-hidden sm:rounded-md">
               <div className="px-4 py-5 border-b border-gray-200 sm:px-6">
-                <h3 className="text-lg leading-6 font-medium text-gray-900">Recent Activity</h3>
+                <h3 className="text-lg leading-6 font-medium text-gray-900">Call History</h3>
               </div>
               <ul className="divide-y divide-gray-200">
-                {[1, 2, 3].map((item) => (
-                  <li key={item}>
-                    <div className="px-4 py-4 sm:px-6">
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm font-medium text-indigo-600 truncate">Video Call with Team Alpha</p>
-                        <div className="ml-2 flex-shrink-0 flex">
-                          <p className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                            Completed
-                          </p>
-                        </div>
-                      </div>
-                      <div className="mt-2 sm:flex sm:justify-between">
-                        <div className="sm:flex">
-                          <p className="flex items-center text-sm text-gray-500">
-                            <Users className="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-400" />
-                            5 participants
-                          </p>
-                        </div>
-                        <div className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
-                          <Calendar className="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-400" />
-                          <p>
-                            Today at 2:30 PM
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </li>
-                ))}
+
               </ul>
             </div>
           </div>

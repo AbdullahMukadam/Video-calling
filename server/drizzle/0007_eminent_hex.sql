@@ -1,0 +1,1 @@
+ALTER TABLE "calls" ALTER COLUMN "id" SET DEFAULT (gen_random_uuid())::uuid;

@@ -1,0 +1,1 @@
+ALTER TABLE "calls" ALTER COLUMN "joinerId" DROP NOT NULL;

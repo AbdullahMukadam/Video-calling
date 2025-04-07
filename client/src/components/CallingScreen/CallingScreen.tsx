@@ -6,6 +6,9 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { Socket } from 'socket.io-client'
 import { Button } from '../ui/button';
 import ReactPlayer from "react-player"
+import axios from 'axios';
+import { Config } from '@/API/Config';
+import { toast } from 'sonner';
 
 interface JoinedUserData {
     joinerEmail: string;
@@ -53,6 +56,7 @@ function CallingScreen() {
     const [myStream, setmyStream] = useState<MediaStream | null>(null)
     const [remoteStream, setremoteStream] = useState<MediaStream | null>(null)
     const [joinersocketId, setjoinerSocketId] = useState<string | null>(null)
+    const [joinerId, setjoinerId] = useState<string | null | number>(null)
     const navigate = useNavigate()
 
     const handleSendOffertoServer = useCallback(async (offer: RTCSessionDescriptionInit, joinerSocketId: string | number) => {
@@ -177,6 +181,7 @@ function CallingScreen() {
 
             if (joinerEmail && joinerId && joinerSocketId) {
                 setjoinerSocketId(joinerSocketId.toString())
+                setjoinerId(joinerId)
                 setIsParticipantPresent(true);
                 console.log(`User joined room, email:${joinerEmail}, id:${joinerId}, socketId:${joinerSocketId}`);
                 handleStartCall(joinerSocketId)
@@ -295,7 +300,7 @@ function CallingScreen() {
 
     }, []);
 
-    const handleEndCall = useCallback(() => {
+    const handleEndCall = useCallback(async () => {
         if (myStream) {
             myStream.getTracks().forEach(track => {
                 track.stop();
@@ -323,9 +328,21 @@ function CallingScreen() {
             socketInstance.current = null
         }
 
+        try {
+            const callEnded = await axios.post(`${Config.baseUrl}/call/add-call-history`, {
+                callId: params.id,
+                callerId: MyId,
+                joinerId: joinerId
+            })
+            if (callEnded.status === 200) {
+                toast("Call History Saved")
+                navigate("/")
+            }
+        } catch (error: any) {
+            toast(error.message || "Error in Ending Call")
+        }
 
-        navigate("/")
-    }, [myStream, navigate, remoteStream],)
+    }, [MyId, joinerId, myStream, navigate, params.id, remoteStream],)
 
 
 
@@ -354,15 +371,15 @@ function CallingScreen() {
 
     return (
         <div className="w-full max-w-6xl mx-auto p-4 bg-white rounded-lg shadow-md">
-            
+
             <div className="flex items-center justify-between mb-6 border-b pb-4">
                 <h2 className="text-xl font-semibold text-gray-800">Room ID: {params.id}</h2>
                 <Button onClick={handleEndCall}>End Call</Button>
             </div>
 
-           
+
             <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-6">
-               
+
                 <div className="relative rounded-lg overflow-hidden bg-gray-100 ">
                     <ReactPlayer
                         url={myStream!}
@@ -377,7 +394,7 @@ function CallingScreen() {
                     </div>
                 </div>
 
-               
+
                 <div className="relative rounded-lg overflow-hidden bg-gray-100 ">
                     <ReactPlayer
                         url={remoteStream!}

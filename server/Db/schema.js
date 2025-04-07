@@ -1,5 +1,5 @@
-import { boolean, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
 
+import { boolean, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
 
 const users = pgTable("users", {
     id: serial("id").primaryKey(),
@@ -10,5 +10,12 @@ const users = pgTable("users", {
     isGoogleUser: boolean().default(false)
 })
 
+const calls = pgTable("calls", {
+    id: serial("id").primaryKey(),
+    callId: text("callId").notNull(),
+    callerId: text("callerId").notNull(),
+    joinerId: text("joinerId"),
+})
 
-export { users }
+
+export { users, calls }

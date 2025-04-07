@@ -1,5 +1,6 @@
 import express from "express"
 import AuthRoutes from "./routes/authRoutes.js"
+import CallRoutes from "./routes/callRoutes.js"
 import dotenv from "dotenv"
 import cors from "cors"
 import cookieParser from "cookie-parser"
@@ -27,7 +28,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser())
 
 app.use("/api/user", AuthRoutes)
-
+app.use("/api/call", CallRoutes)
 
 app.get("/", (req, res) => {
     res.send("hello")
