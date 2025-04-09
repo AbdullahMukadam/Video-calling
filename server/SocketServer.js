@@ -106,6 +106,51 @@ const SocketEvents = (socket, io) => {
             to
         })
     })
+
+    socket.on("callCut", (data) => {
+        const { callCutUserId, roomId, callCutUserSocketId } = data;
+        let roomObj = calls[roomId];
+        let toId;
+        let fromId;
+
+        if (roomObj.callersocketId === callCutUserSocketId) {
+            fromId = callCutUserSocketId
+
+            const joinerSocketId = roomObj.joinerSocketId
+            if (!joinerSocketId) {
+                io.to(callCutUserSocketId).emit("callEndedByYou", {
+                    message: "Call Ended Succesfully",
+                    callCutUserId
+                })
+                return
+            }
+            io.to(joinerSocketId).emit("CallEnded", {
+                from: callCutUserId,
+                AnotherUserId: roomObj.joinerId,
+                message: "Call has beed Ended by Another User, You can Cut the call."
+            })
+        } else if (roomObj.joinerSocketId === callCutUserSocketId) {
+            toId = callCutUserSocketId
+
+            const callerSocketId = roomObj.callersocketId
+            if (!callerSocketId) {
+                io.to(callCutUserSocketId).emit("callEndedByYou", {
+                    message: "Call Ended Succesfully",
+                    callCutUserId
+                })
+                return
+            }
+            io.to(callerSocketId).emit("CallEnded", {
+                from: callCutUserId,
+                AnotherUserId: roomObj.callerId,
+                message: "Call has beed Ended by Another User, You can Cut the call."
+            })
+        }
+
+
+
+
+    })
 }
 
 export { SocketEvents }

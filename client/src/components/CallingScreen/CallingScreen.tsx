@@ -334,14 +334,14 @@ function CallingScreen() {
         console.log("My Id :", user?.id)
         const callEnded = await axios.post(`${Config.baseUrl}/call/add-call-history`, {
             callId: params.id,
-            callerId: user?.id,
-            joinerId: joinerId
+            callerId: MyId || user?.id || "",
+            joinerId: joinerId || ""
         })
-        if (callEnded.status === 409) {
-            navigate("/")
+        if (callEnded.status === 201) {
+            navigate("/", { state: "success" })
         } else if (callEnded.status === 200) {
             toast("Call History Saved")
-            navigate("/")
+            navigate("/", { state: "success" })
         }
 
 
@@ -404,7 +404,7 @@ function CallingScreen() {
                         playing
                         width="100%"
                         height="100%"
-                        muted={true}
+                        muted={false}
                         style={{ objectFit: 'cover' }}
                     />
                     <div className="absolute bottom-3 left-3 bg-black bg-opacity-60 text-white px-3 py-1 rounded-md text-sm">

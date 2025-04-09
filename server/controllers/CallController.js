@@ -16,7 +16,7 @@ const AddCallHistory = async (req, res) => {
     try {
         const isCallExists = await db.select().from(calls).where(eq(calls.callId, callId))
         if (isCallExists[0]) {
-            return res.status(409).json({
+            return res.status(201).json({
                 success: false,
                 message: "Call Already Exists"
             })

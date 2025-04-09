@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../Context/userContextProvider';
 import { Video, Users, Calendar, Settings } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '../ui/button';
 import { CustomDialog } from '../Shadcn/Dialog';
 import { toast } from 'sonner';
@@ -16,6 +16,7 @@ function Home() {
   const [dialogmethod, setdialogmethod] = useState("")
   const [isAuth, setisAuth] = useState(false)
   const [calls, setcalls] = useState<Array<object>>([])
+  const location = useLocation()
 
   useEffect(() => {
     const authStatus = localStorage.getItem("jwt")
@@ -36,12 +37,12 @@ function Home() {
       }
     } catch (error: any) {
       console.log("An Error Occured in getting Calls History")
-
+      
     }
   }
 
   useEffect(() => {
-    if (calls.length === 0) {
+    if (calls.length === 0 || location.state === "success") {
       getCallHistory()
     }
   }, [])
