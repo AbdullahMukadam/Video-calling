@@ -51,7 +51,7 @@ interface ReceivedNegoAnswer {
 
 function CallingScreen() {
     const params = useParams();
-    const [isParticipantPresent, setIsParticipantPresent] = useState(false);
+    //const [isParticipantPresent, setIsParticipantPresent] = useState(false);
     const { user } = useAuth()
     const { MyId, MySocketId } = useCall()
     const socketInstance = useRef<Socket | null>(null);
@@ -184,7 +184,7 @@ function CallingScreen() {
             if (joinerEmail && joinerId && joinerSocketId) {
                 setjoinerSocketId(joinerSocketId.toString())
                 setjoinerId(joinerId)
-                setIsParticipantPresent(true);
+               // setIsParticipantPresent(true);
                 console.log(`User joined room, email:${joinerEmail}, id:${joinerId}, socketId:${joinerSocketId}`);
                 handleStartCall(joinerSocketId)
             }
@@ -319,7 +319,7 @@ function CallingScreen() {
             peerService.cleanup()
         }
 
-        setIsParticipantPresent(false)
+        //setIsParticipantPresent(false)
         setmyStream(null)
         setremoteStream(null)
         setjoinerSocketId(null)

@@ -13,13 +13,13 @@ interface NavItem {
 
 function Navbar() {
     const [isOpen, setIsOpen] = useState<boolean>(false)
-    const { auth, handleLogout } = useAuth()
+    const { handleLogout } = useAuth()
     const location = useLocation()
     const navigate = useNavigate()
     const [isAuth, setisAuth] = useState(false)
 
     useEffect(() => {
-        let authStatus = localStorage.getItem("jwt")
+        const authStatus = localStorage.getItem("jwt")
         if (authStatus === "true") {
             setisAuth(true)
         } else {

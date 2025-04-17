@@ -7,6 +7,10 @@ import { CustomDialog } from '../Shadcn/Dialog';
 import axios from 'axios';
 import { Config } from '@/API/Config';
 
+interface CallHistory {
+  callId: string | number;
+  createdAt: string | number
+}
 
 function Home() {
   const { user } = useAuth();
@@ -14,7 +18,7 @@ function Home() {
   const [open, setopen] = useState(false)
   const [dialogmethod, setdialogmethod] = useState("")
   const [isAuth, setisAuth] = useState(false)
-  const [calls, setcalls] = useState<Array<object>>([])
+  const [calls, setcalls] = useState<Array<CallHistory>>([])
   const location = useLocation()
 
   useEffect(() => {

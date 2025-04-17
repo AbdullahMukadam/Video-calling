@@ -6,7 +6,6 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-    DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,8 +20,8 @@ interface Props {
     open: boolean;
     setopen: (open: boolean) => void;
     dialogmethod: string;
-    userId: string;
-    userEmail: string;
+    userId: number | undefined;
+    userEmail: string | undefined;
 }
 
 export function CustomDialog({ open, setopen, dialogmethod, userId, userEmail }: Props) {
@@ -30,9 +29,10 @@ export function CustomDialog({ open, setopen, dialogmethod, userId, userEmail }:
     const [RoomId, setroomId] = useState("");
     const { roomId, setRoomId, setMyId, setMySocketId } = useCall();
     const navigate = useNavigate();
+    const stringId = userId?.toString()
 
     const handleSubmission = async () => {
-        const res = await handleRoomCreation(userId, userEmail, {
+        const res = await handleRoomCreation(stringId, userEmail, {
             setRoomId,
             setMyId,
             setMySocketId,
@@ -52,7 +52,7 @@ export function CustomDialog({ open, setopen, dialogmethod, userId, userEmail }:
             return;
         }
 
-        const res = await handleRoomJoining(RoomId, userId, userEmail);
+        const res = await handleRoomJoining(RoomId, stringId, userEmail);
 
         if (res === "success") {
             toast("You'll be joining the room shortly, please wait");
