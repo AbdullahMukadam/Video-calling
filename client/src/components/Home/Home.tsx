@@ -1,10 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../../Context/userContextProvider';
-import { Video, Users, Calendar, Settings } from 'lucide-react';
+import { Video } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '../ui/button';
 import { CustomDialog } from '../Shadcn/Dialog';
-import { toast } from 'sonner';
 import axios from 'axios';
 import { Config } from '@/API/Config';
 
@@ -35,9 +34,9 @@ function Home() {
       if (calls.status === 200) {
         setcalls(calls.data.callHistory)
       }
-    } catch (error: any) {
-      console.log("An Error Occured in getting Calls History")
-      
+    } catch (err: any) {
+      console.log("An Error Occured in getting Calls History", err)
+
     }
   }
 

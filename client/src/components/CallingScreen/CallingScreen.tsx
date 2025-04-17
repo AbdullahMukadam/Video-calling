@@ -167,7 +167,7 @@ function CallingScreen() {
 
     const handleReceiveAnswerFromServer = useCallback(async (data: AnswerData) => {
         try {
-            const { answer, from, to } = data;
+            const { answer } = data;
             await peerService.setAnswer(answer)
             handlesendstream()
         } catch (error) {
@@ -195,7 +195,7 @@ function CallingScreen() {
 
     const handleIceCandidates = useCallback(async (data: IceCandidateData) => {
         try {
-            const { candidate, from } = data;
+            const { candidate} = data;
             await peerService.addIceCandidate(candidate)
         } catch (error) {
             console.error("Error handling ICE candidate:", error)
@@ -237,7 +237,7 @@ function CallingScreen() {
 
     const handleNegoAnswer = useCallback(async (data: ReceivedNegoAnswer) => {
         try {
-            const { answer, from, to } = data
+            const { answer} = data
             await peerService.setAnswer(answer)
 
         } catch (error) {
