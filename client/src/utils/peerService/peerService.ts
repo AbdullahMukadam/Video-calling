@@ -52,10 +52,11 @@ class PeerService {
 
             try {
                 await this.peer.setLocalDescription(offer);
-            } catch (error: unknown) {
+            } catch (error: any) {
                 console.error('Error setting local description:', error);
                 // Create a new peer connection if this is an m-line order issue
-                if (error.toString().includes("m-lines")) {
+                const errorString = error instanceof Error ? error.message : String(error);
+                if (errorString.includes("m-lines")) {
                     console.log("Detected m-line order issue, creating new connection");
                     this.createNewConnection();
                     // Try again with fresh connection
