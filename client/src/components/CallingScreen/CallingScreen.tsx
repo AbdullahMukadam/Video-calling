@@ -262,6 +262,8 @@ function CallingScreen() {
 
         console.log('Socket initialized:', socket.id);
 
+        peerService.createNewConnection()
+        
         const getMedia = async () => {
             try {
                 const streams = await navigator.mediaDevices.getUserMedia({

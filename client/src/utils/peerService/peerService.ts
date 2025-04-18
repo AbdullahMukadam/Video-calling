@@ -3,37 +3,39 @@ class PeerService {
     private streamCleanupCallbacks: (() => void)[] = [];
 
     constructor() {
-        this.initializePeerConnection();
+
     }
 
-    private initializePeerConnection() {
-        if (!this.peer) {
-            this.peer = new RTCPeerConnection({
-                iceServers: [
-                    {
-                        urls: [
-                            "stun:stun.l.google.com:19302",
-                            "stun:global.stun.twilio.com:3478",
-                            "stun:stun1.l.google.com:19302",
-                            "stun:stun2.l.google.com:19302"
-                        ]
-                    }
-                ]
-            });
+    createNewConnection() {
 
-            
-            this.peer.oniceconnectionstatechange = () => {
-                console.log('ICE connection state changed:', this.peer?.iceConnectionState);
-            };
+        this.cleanup();
 
-            this.peer.onicegatheringstatechange = () => {
-                console.log('ICE gathering state changed:', this.peer?.iceGatheringState);
-            };
+        this.peer = new RTCPeerConnection({
+            iceServers: [
+                {
+                    urls: [
+                        "stun:stun.l.google.com:19302",
+                        "stun:global.stun.twilio.com:3478",
+                        "stun:stun1.l.google.com:19302",
+                        "stun:stun2.l.google.com:19302"
+                    ]
+                }
+            ]
+        });
 
-            this.peer.onsignalingstatechange = () => {
-                console.log('Signaling state changed:', this.peer?.signalingState);
-            };
-        }
+        this.peer.oniceconnectionstatechange = () => {
+            console.log('ICE connection state changed:', this.peer?.iceConnectionState);
+        };
+
+        this.peer.onicegatheringstatechange = () => {
+            console.log('ICE gathering state changed:', this.peer?.iceGatheringState);
+        };
+
+        this.peer.onsignalingstatechange = () => {
+            console.log('Signaling state changed:', this.peer?.signalingState);
+        };
+
+        return this.peer;
     }
 
     async getOffer(): Promise<RTCSessionDescriptionInit | undefined> {
@@ -47,7 +49,26 @@ class PeerService {
                 offerToReceiveAudio: true,
                 offerToReceiveVideo: true
             });
-            await this.peer.setLocalDescription(offer);
+
+            try {
+                await this.peer.setLocalDescription(offer);
+            } catch (error: unknown) {
+                console.error('Error setting local description:', error);
+                // Create a new peer connection if this is an m-line order issue
+                if (error.toString().includes("m-lines")) {
+                    console.log("Detected m-line order issue, creating new connection");
+                    this.createNewConnection();
+                    // Try again with fresh connection
+                    const newOffer = await this.peer!.createOffer({
+                        offerToReceiveAudio: true,
+                        offerToReceiveVideo: true
+                    });
+                    await this.peer!.setLocalDescription(newOffer);
+                    return newOffer;
+                }
+                throw error;
+            }
+
             return offer;
         } catch (error) {
             console.error('Error creating offer:', error);
@@ -119,20 +140,20 @@ class PeerService {
             return;
         }
 
-       
+
         const existingSenders = this.peer.getSenders();
 
         stream.getTracks().forEach(track => {
             console.log("Adding track:", track.kind, track.id);
 
-            
+
             const trackExists = existingSenders.some(sender =>
                 sender.track && sender.track.id === track.id
             );
 
             if (!trackExists) {
                 this.peer?.addTrack(track, stream);
-               
+
                 this.streamCleanupCallbacks.push(() => track.stop());
             } else {
                 console.log("Track already exists, skipping:", track.kind, track.id);
@@ -161,7 +182,7 @@ class PeerService {
             });
         }
 
-        
+
         this.streamCleanupCallbacks.forEach(callback => callback());
         this.streamCleanupCallbacks = [];
     }
