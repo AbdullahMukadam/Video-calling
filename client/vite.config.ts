@@ -4,7 +4,7 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import flowbiteReact from 'flowbite-react/plugin/vite';
 import { NodeGlobalsPolyfillPlugin } from '@esbuild-plugins/node-globals-polyfill';
-
+import nodePolyfills from 'rollup-plugin-node-polyfills';
 
 export default defineConfig({
   plugins: [react(), tailwindcss(), flowbiteReact()],
@@ -23,7 +23,7 @@ export default defineConfig({
   },
   build: {
     rollupOptions: {
-      plugins: [nodePolyfills()],
+      plugins: [nodePolyfills],
     },
   },
   resolve: {
@@ -36,6 +36,4 @@ export default defineConfig({
   },
 });
 
-function nodePolyfills(): import("rollup").InputPluginOption {
-  throw new Error('Function not implemented.');
-}
+
