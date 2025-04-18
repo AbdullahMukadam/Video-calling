@@ -7,9 +7,12 @@ class PeerService {
     }
 
     createNewConnection() {
+        console.log("Creating completely new peer connection");
 
+        // Thorough cleanup of existing connection
         this.cleanup();
 
+        // Create a fresh connection
         this.peer = new RTCPeerConnection({
             iceServers: [
                 {
@@ -23,6 +26,14 @@ class PeerService {
             ]
         });
 
+        this.setupEventListeners();
+
+        return this.peer;
+    }
+
+    private setupEventListeners() {
+        if (!this.peer) return;
+
         this.peer.oniceconnectionstatechange = () => {
             console.log('ICE connection state changed:', this.peer?.iceConnectionState);
         };
@@ -34,38 +45,51 @@ class PeerService {
         this.peer.onsignalingstatechange = () => {
             console.log('Signaling state changed:', this.peer?.signalingState);
         };
-
-        return this.peer;
     }
 
     async getOffer(): Promise<RTCSessionDescriptionInit | undefined> {
         if (!this.peer) {
-            console.error('PeerConnection not initialized');
-            return undefined;
+            console.log('Creating new connection for offer');
+            this.createNewConnection();
         }
 
         try {
-            const offer = await this.peer.createOffer({
+            console.log("Creating new offer, current signaling state:", this.peer?.signalingState);
+
+            // Force close and recreate if in wrong state
+            if (this.peer?.signalingState !== "stable") {
+                console.log("Connection not in stable state, recreating");
+                this.cleanup();
+                this.peer = new RTCPeerConnection({
+                    iceServers: [
+                        {
+                            urls: [
+                                "stun:stun.l.google.com:19302",
+                                "stun:global.stun.twilio.com:3478",
+                                "stun:stun1.l.google.com:19302",
+                                "stun:stun2.l.google.com:19302"
+                            ]
+                        }
+                    ]
+                });
+                this.setupEventListeners();
+            }
+
+            const offer = await this.peer?.createOffer({
                 offerToReceiveAudio: true,
                 offerToReceiveVideo: true
             });
 
             try {
-                await this.peer.setLocalDescription(offer);
+                await this.peer?.setLocalDescription(offer);
             } catch (error: any) {
                 console.error('Error setting local description:', error);
-                // Create a new peer connection if this is an m-line order issue
-                const errorString = error instanceof Error ? error.message : String(error);
-                if (errorString.includes("m-lines")) {
-                    console.log("Detected m-line order issue, creating new connection");
-                    this.createNewConnection();
-                    // Try again with fresh connection
-                    const newOffer = await this.peer!.createOffer({
-                        offerToReceiveAudio: true,
-                        offerToReceiveVideo: true
-                    });
-                    await this.peer!.setLocalDescription(newOffer);
-                    return newOffer;
+
+                // Check if this is an m-line order issue
+                if (String(error).includes("m-lines")) {
+                    console.log("Detected m-line order issue, recreating connection");
+                    this.cleanup();
+                    return this.getOffer(); // Recursive call with fresh connection
                 }
                 throw error;
             }
@@ -176,7 +200,7 @@ class PeerService {
         };
     }
 
-    private cleanupTracks(): void {
+/*     private cleanupTracks(): void {
         if (this.peer) {
             this.peer.getSenders().forEach(sender => {
                 this.peer?.removeTrack(sender);
@@ -186,12 +210,25 @@ class PeerService {
 
         this.streamCleanupCallbacks.forEach(callback => callback());
         this.streamCleanupCallbacks = [];
-    }
+    } */
 
     cleanup(): void {
-        this.cleanupTracks();
+        console.log("Performing thorough cleanup");
+
+        // Close all tracks
+        this.streamCleanupCallbacks.forEach(callback => callback());
+        this.streamCleanupCallbacks = [];
 
         if (this.peer) {
+            // Remove all tracks
+            this.peer.getSenders().forEach(sender => {
+                if (sender.track) {
+                    sender.track.stop();
+                }
+                this.peer?.removeTrack(sender);
+            });
+
+            // Close and nullify the connection
             this.peer.close();
             this.peer = null;
         }
