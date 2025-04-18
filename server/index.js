@@ -14,7 +14,7 @@ const app = express()
 let server;
 
 const corsOptions = {
-    origin: "http://localhost:5173",
+    origin: "https://video-calling-cyan.vercel.app",
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'x-csrf-token'],
@@ -42,7 +42,7 @@ server = app.listen(PORT, (err) => {
 let io = new Server(server, {
     pingTimeout: 60000,
     cors: {
-        origin: "http://localhost:5173"
+        origin: "https://video-calling-cyan.vercel.app"
     }
 })
 
