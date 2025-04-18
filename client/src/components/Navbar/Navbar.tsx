@@ -157,7 +157,9 @@ function Navbar() {
                                 )
                             ))}
                         </div>
+                        {isAuth && <button onClick={LogOut} className='px-4 py-2 bg-red-500 rounded-md text-sm font-medium transition-colors duration-200 ease-in-out'>Logout</button>}
                     </motion.div>
+
                 )}
             </AnimatePresence>
         </nav>

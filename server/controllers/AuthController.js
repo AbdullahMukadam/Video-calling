@@ -39,7 +39,7 @@ const SignUpWithCredentials = async (req, res) => {
             res.cookie("jwt", token, {
                 httpOnly: true,
                 secure: process.env.NODE_ENV,
-                SameSite: "None",
+                sameSite: "none",
                 maxAge: 30 * 24 * 60 * 60 * 1000
             })
             res.status(200).json({
@@ -181,7 +181,7 @@ const GoogleAuth = async (req, res) => {
             return res.cookie("jwt", token, {
                 httpOnly: true,
                 secure: process.env.NODE_ENV === 'production',
-                SameSite: "None",
+                sameSite: "none",
                 maxAge: 30 * 24 * 60 * 60 * 1000
             }).status(200).json({
                 success: true,
@@ -206,6 +206,7 @@ const GoogleAuth = async (req, res) => {
             res.cookie("jwt", token, {
                 httpOnly: true,
                 secure: process.env.NODE_ENV === 'production',
+                sameSite: "none",
                 maxAge: 30 * 24 * 60 * 60 * 1000
             });
 
