@@ -275,7 +275,7 @@ function CallingScreen() {
 
         console.log('Socket initialized:', socket.id);
 
-        peerService.createNewConnection()
+       // peerService.createNewConnection()
 
         const getMedia = async () => {
             try {

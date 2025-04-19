@@ -97,7 +97,7 @@ class PeerService {
         }
 
         try {
-            await this.peer.setRemoteDescription(new RTCSessionDescription(offer));
+            await this.peer.setRemoteDescription(offer);
             const answer = await this.peer.createAnswer();
             await this.peer.setLocalDescription(answer);
             return answer;
@@ -115,7 +115,7 @@ class PeerService {
         }
 
         try {
-            await this.peer.setRemoteDescription(new RTCSessionDescription(answer));
+            await this.peer.setRemoteDescription(answer);
         } catch (error) {
             console.error('Error setting answer:', error);
             this.cleanup();
