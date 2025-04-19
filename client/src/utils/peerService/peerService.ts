@@ -6,15 +6,14 @@ class PeerService {
         offerToReceiveVideo: true
     };
 
-    constructor() { }
+    constructor() {
+        this.createNewConnection();
+    }
 
     createNewConnection() {
         console.log("Creating completely new peer connection");
-
-        // Thorough cleanup of existing connection
         this.cleanup();
 
-        // Create a fresh connection
         this.peer = new RTCPeerConnection({
             iceServers: [
                 {
