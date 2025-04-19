@@ -1,10 +1,12 @@
 class PeerService {
     peer: RTCPeerConnection | null = null;
     private streamCleanupCallbacks: (() => void)[] = [];
+    private mediaConstraints = {
+        offerToReceiveAudio: true,
+        offerToReceiveVideo: true
+    };
 
-    constructor() {
-
-    }
+    constructor() { }
 
     createNewConnection() {
         console.log("Creating completely new peer connection");
@@ -44,76 +46,64 @@ class PeerService {
 
         this.peer.onsignalingstatechange = () => {
             console.log('Signaling state changed:', this.peer?.signalingState);
+
+            // If connection failed, handle cleanup
+            if (this.peer?.signalingState === "closed") {
+                console.log("Connection closed, cleaning up resources");
+                this.cleanup();
+            }
         };
     }
 
     async getOffer(): Promise<RTCSessionDescriptionInit | undefined> {
+        // Always create a fresh connection for new offers
+        // This is crucial to avoid m-line ordering issues
+        this.createNewConnection();
+
         if (!this.peer) {
-            console.log('Creating new connection for offer');
-            this.createNewConnection();
+            console.error('Failed to create peer connection');
+            return undefined;
         }
 
         try {
-            console.log("Creating new offer, current signaling state:", this.peer?.signalingState);
+            console.log("Creating new offer, current signaling state:", this.peer.signalingState);
 
-            // Force close and recreate if in wrong state
-            if (this.peer?.signalingState !== "stable") {
-                console.log("Connection not in stable state, recreating");
-                this.cleanup();
-                this.peer = new RTCPeerConnection({
-                    iceServers: [
-                        {
-                            urls: [
-                                "stun:stun.l.google.com:19302",
-                                "stun:global.stun.twilio.com:3478",
-                                "stun:stun1.l.google.com:19302",
-                                "stun:stun2.l.google.com:19302"
-                            ]
-                        }
-                    ]
-                });
-                this.setupEventListeners();
-            }
+            // Create transceivers with consistent ordering before creating the offer
+            // This ensures m-lines will have a consistent order
+            this.peer.addTransceiver('audio', { direction: 'sendrecv' });
+            this.peer.addTransceiver('video', { direction: 'sendrecv' });
 
-            const offer = await this.peer?.createOffer({
-                offerToReceiveAudio: true,
-                offerToReceiveVideo: true
-            });
-
-            try {
-                await this.peer?.setLocalDescription(offer);
-            } catch (error: any) {
-                console.error('Error setting local description:', error);
-
-                // Check if this is an m-line order issue
-                if (String(error).includes("m-lines")) {
-                    console.log("Detected m-line order issue, recreating connection");
-                    this.cleanup();
-                    return this.getOffer(); // Recursive call with fresh connection
-                }
-                throw error;
-            }
+            const offer = await this.peer.createOffer(this.mediaConstraints);
+            await this.peer.setLocalDescription(offer);
 
             return offer;
         } catch (error) {
             console.error('Error creating offer:', error);
+            // Clean up on error but don't recursively retry
+            this.cleanup();
             return undefined;
         }
     }
 
     async generateAnswer(offer: RTCSessionDescriptionInit): Promise<RTCSessionDescriptionInit | undefined> {
         if (!this.peer) {
-            console.error('PeerConnection not initialized');
+            console.log('Creating new connection for answer');
+            this.createNewConnection();
+        }
+
+        if (!this.peer) {
+            console.error('Failed to create peer connection');
             return undefined;
         }
 
         try {
-            await this.peer.setRemoteDescription(offer);
+            await this.peer.setRemoteDescription(new RTCSessionDescription(offer));
             const answer = await this.peer.createAnswer();
             await this.peer.setLocalDescription(answer);
             return answer;
         } catch (error) {
             console.error('Error generating answer:', error);
+            this.cleanup();
             return undefined;
         }
     }
@@ -125,9 +115,10 @@ class PeerService {
         }
 
         try {
-            await this.peer.setRemoteDescription(answer);
+            await this.peer.setRemoteDescription(new RTCSessionDescription(answer));
         } catch (error) {
             console.error('Error setting answer:', error);
+            this.cleanup();
         }
     }
 
@@ -165,24 +156,38 @@ class PeerService {
             return;
         }
 
+        // Consistent approach to track addition
+        const senders = this.peer.getSenders();
+        const audioSenders = senders.filter(s => s.track && s.track.kind === 'audio');
+        const videoSenders = senders.filter(s => s.track && s.track.kind === 'video');
 
-        const existingSenders = this.peer.getSenders();
-
+        // Process tracks by type to maintain ordering
         stream.getTracks().forEach(track => {
-            console.log("Adding track:", track.kind, track.id);
+            console.log("Processing track:", track.kind, track.id);
 
-
-            const trackExists = existingSenders.some(sender =>
-                sender.track && sender.track.id === track.id
-            );
-
-            if (!trackExists) {
-                this.peer?.addTrack(track, stream);
-
-                this.streamCleanupCallbacks.push(() => track.stop());
-            } else {
-                console.log("Track already exists, skipping:", track.kind, track.id);
+            if (track.kind === 'audio') {
+                if (audioSenders.length > 0) {
+                    // Replace existing audio track
+                    console.log("Replacing existing audio track");
+                    audioSenders[0].replaceTrack(track);
+                } else {
+                    // Add new audio track
+                    console.log("Adding new audio track");
+                    this.peer?.addTrack(track, stream);
+                }
+            } else if (track.kind === 'video') {
+                if (videoSenders.length > 0) {
+                    // Replace existing video track
+                    console.log("Replacing existing video track");
+                    videoSenders[0].replaceTrack(track);
+                } else {
+                    // Add new video track
+                    console.log("Adding new video track");
+                    this.peer?.addTrack(track, stream);
+                }
             }
+
+            this.streamCleanupCallbacks.push(() => track.stop());
         });
     }
 
@@ -200,18 +205,6 @@ class PeerService {
         };
     }
 
-/*     private cleanupTracks(): void {
-        if (this.peer) {
-            this.peer.getSenders().forEach(sender => {
-                this.peer?.removeTrack(sender);
-            });
-        }
-
-
-        this.streamCleanupCallbacks.forEach(callback => callback());
-        this.streamCleanupCallbacks = [];
-    } */
-
     cleanup(): void {
         console.log("Performing thorough cleanup");
 
@@ -220,12 +213,18 @@ class PeerService {
         this.streamCleanupCallbacks = [];
 
         if (this.peer) {
-            // Remove all tracks
+            // Remove all event listeners
+            if (this.peer.onicecandidate) this.peer.onicecandidate = null;
+            if (this.peer.ontrack) this.peer.ontrack = null;
+            if (this.peer.oniceconnectionstatechange) this.peer.oniceconnectionstatechange = null;
+            if (this.peer.onicegatheringstatechange) this.peer.onicegatheringstatechange = null;
+            if (this.peer.onsignalingstatechange) this.peer.onsignalingstatechange = null;
+
+            // Stop and remove all tracks
             this.peer.getSenders().forEach(sender => {
                 if (sender.track) {
                     sender.track.stop();
                 }
-                this.peer?.removeTrack(sender);
             });
 
             // Close and nullify the connection
@@ -233,8 +232,6 @@ class PeerService {
             this.peer = null;
         }
     }
-
-
 }
 
 const peerService = new PeerService();
