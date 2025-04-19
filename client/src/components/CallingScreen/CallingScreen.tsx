@@ -76,7 +76,7 @@ function CallingScreen() {
 
     const handleStartCall = useCallback(async (joinerSocketId: string | number) => {
         try {
-            peerService.createNewConnection();
+           // peerService.createNewConnection();
             const streams = await navigator.mediaDevices.getUserMedia({
                 video: true,
                 audio: true
@@ -128,7 +128,7 @@ function CallingScreen() {
             const { offer, from, me } = data
             console.log("Received the Offer from The Server:", offer, "from this user:", from, "to me:", me)
 
-            peerService.createNewConnection();
+           // peerService.createNewConnection();
             const streams = await navigator.mediaDevices.getUserMedia({
                 video: true,
                 audio: true
