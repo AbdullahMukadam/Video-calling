@@ -59,7 +59,6 @@ function CallingScreen() {
     const [remoteStream, setremoteStream] = useState<MediaStream | null>(null)
     const [joinersocketId, setjoinerSocketId] = useState<string | null>(null)
     const [joinerId, setjoinerId] = useState<string | null | number>(null)
-    const [isNegotiating, setIsNegotiating] = useState(false);
     const navigate = useNavigate()
 
     const handleSendOffertoServer = useCallback(async (offer: RTCSessionDescriptionInit, joinerSocketId: string | number) => {
@@ -76,7 +75,7 @@ function CallingScreen() {
 
     const handleStartCall = useCallback(async (joinerSocketId: string | number) => {
         try {
-           // peerService.createNewConnection();
+            // peerService.createNewConnection();
             const streams = await navigator.mediaDevices.getUserMedia({
                 video: true,
                 audio: true
@@ -128,7 +127,7 @@ function CallingScreen() {
             const { offer, from, me } = data
             console.log("Received the Offer from The Server:", offer, "from this user:", from, "to me:", me)
 
-           // peerService.createNewConnection();
+            // peerService.createNewConnection();
             const streams = await navigator.mediaDevices.getUserMedia({
                 video: true,
                 audio: true
@@ -209,12 +208,7 @@ function CallingScreen() {
 
     const handleHandleNegoNeeded = useCallback(async () => {
         try {
-            if (isNegotiating) {
-                console.log("Negotiation already in progress, skipping");
-                return;
-            }
 
-            setIsNegotiating(true);
 
             const offer = await peerService.getOffer();
             console.log("mysocketId:", MySocketId, "joinersocketid:", joinersocketId)
@@ -223,15 +217,13 @@ function CallingScreen() {
                 from: MySocketId,
                 to: joinersocketId
             })
-            setTimeout(() => {
-                setIsNegotiating(false);
-            }, 1000);
+
         } catch (error) {
             console.error("Error in handleHandleNegoNeeded:", error)
-            setIsNegotiating(false);
+
         }
 
-    }, [MySocketId, isNegotiating, joinersocketId],)
+    }, [MySocketId, joinersocketId],)
 
     const handleNegoOffer = useCallback(async (data: ReceivedNegoOffer) => {
         try {
@@ -275,7 +267,7 @@ function CallingScreen() {
 
         console.log('Socket initialized:', socket.id);
 
-       // peerService.createNewConnection()
+        // peerService.createNewConnection()
 
         const getMedia = async () => {
             try {
