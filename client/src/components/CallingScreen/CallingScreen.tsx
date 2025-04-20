@@ -294,6 +294,7 @@ function CallingScreen() {
 
             if (peerService.peer) {
                 peerService.cleanup()
+                peerService.peer = null
             }
 
             socket.disconnect()
