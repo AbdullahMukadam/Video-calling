@@ -38,8 +38,8 @@ function Home() {
       if (calls.status === 200) {
         setcalls(calls.data.callHistory)
       }
-    } catch (error: any) {
-      console.log("An Error Occured in getting Calls History", error)
+    } catch (err: unknown) {
+      console.log("An Error Occured in getting Calls History", err)
 
     }
   }
@@ -48,7 +48,7 @@ function Home() {
     if (calls.length === 0 || location.state === "success") {
       getCallHistory()
     }
-  }, [calls.length, location.state])
+  })
 
 
   const handleDialogOpen = (method: string): void => {
