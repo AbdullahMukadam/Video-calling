@@ -29,7 +29,7 @@ export function CustomDialog({ open, setopen, dialogmethod, userId, userEmail }:
     const [RoomId, setroomId] = useState("");
     const { roomId, setRoomId, setMyId, setMySocketId } = useCall();
     const navigate = useNavigate();
-    const stringId = userId?.toString()
+    const stringId = String(userId)
 
     const handleSubmission = async () => {
         const res = await handleRoomCreation(stringId, userEmail, {
