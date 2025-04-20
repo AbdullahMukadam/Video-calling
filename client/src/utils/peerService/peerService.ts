@@ -5,6 +5,10 @@ class PeerService {
         offerToReceiveAudio: true,
         offerToReceiveVideo: true
     };
+    // Buffer for ice candidates received before remote description is set
+    private pendingIceCandidates: RTCIceCandidate[] = [];
+    // Flag to track if remote description is set
+    private hasRemoteDescription = false;
 
     constructor() {
         this.createNewConnection();
@@ -13,6 +17,10 @@ class PeerService {
     createNewConnection() {
         console.log("Creating completely new peer connection");
         this.cleanup();
+
+        // Reset state variables
+        this.pendingIceCandidates = [];
+        this.hasRemoteDescription = false;
 
         this.peer = new RTCPeerConnection({
             iceServers: [
@@ -58,6 +66,13 @@ class PeerService {
 
         this.peer.oniceconnectionstatechange = () => {
             console.log('ICE connection state changed:', this.peer?.iceConnectionState);
+
+            // Handle disconnected state
+            if (this.peer?.iceConnectionState === 'disconnected' ||
+                this.peer?.iceConnectionState === 'failed' ||
+                this.peer?.iceConnectionState === 'closed') {
+                console.log(`ICE connection ${this.peer?.iceConnectionState}, may need restart`);
+            }
         };
 
         this.peer.onicegatheringstatechange = () => {
@@ -71,6 +86,15 @@ class PeerService {
             if (this.peer?.signalingState === "closed") {
                 console.log("Connection closed, cleaning up resources");
                 this.cleanup();
+            }
+        };
+
+        // Set up default ice candidate handler to log events
+        this.peer.onicecandidate = (event) => {
+            if (event.candidate) {
+                console.log('ICE candidate generated but no handler attached', event.candidate);
+            } else {
+                console.log('ICE gathering complete');
             }
         };
     }
@@ -117,7 +141,12 @@ class PeerService {
         }
 
         try {
-            await this.peer.setRemoteDescription(offer);
+            await this.peer.setRemoteDescription(new RTCSessionDescription(offer));
+            this.hasRemoteDescription = true;
+
+            // Process any pending ICE candidates
+            this.processPendingIceCandidates();
+
             const answer = await this.peer.createAnswer();
             await this.peer.setLocalDescription(answer);
             return answer;
@@ -135,7 +164,11 @@ class PeerService {
         }
 
         try {
-            await this.peer.setRemoteDescription(answer);
+            await this.peer.setRemoteDescription(new RTCSessionDescription(answer));
+            this.hasRemoteDescription = true;
+
+            // Process any pending ICE candidates
+            this.processPendingIceCandidates();
         } catch (error) {
             console.error('Error setting answer:', error);
             this.cleanup();
@@ -150,6 +183,7 @@ class PeerService {
 
         this.peer.onicecandidate = (event) => {
             if (event.candidate) {
+                console.log('ICE candidate generated:', event.candidate.candidate?.substring(0, 30) + '...');
                 onIceCandidateCallback(event.candidate);
             } else {
                 console.log('ICE gathering complete');
@@ -164,10 +198,36 @@ class PeerService {
         }
 
         try {
-            await this.peer.addIceCandidate(candidate);
+            // Check if we have a remote description yet
+            if (!this.hasRemoteDescription) {
+                console.log('Queuing ICE candidate until remote description is set');
+                this.pendingIceCandidates.push(candidate);
+                return;
+            }
+
+            await this.peer.addIceCandidate(new RTCIceCandidate(candidate));
+            console.log('ICE candidate added successfully');
         } catch (error) {
             console.error('Error adding ICE candidate:', error);
         }
+    }
+
+    private async processPendingIceCandidates(): Promise<void> {
+        if (!this.peer || !this.hasRemoteDescription) return;
+
+        console.log(`Processing ${this.pendingIceCandidates.length} pending ICE candidates`);
+
+        for (const candidate of this.pendingIceCandidates) {
+            try {
+                await this.peer.addIceCandidate(new RTCIceCandidate(candidate));
+                console.log('Pending ICE candidate added successfully');
+            } catch (error) {
+                console.error('Error adding pending ICE candidate:', error);
+            }
+        }
+
+        // Clear the queue
+        this.pendingIceCandidates = [];
     }
 
     sendStream(stream: MediaStream): void {
@@ -219,7 +279,7 @@ class PeerService {
 
         this.peer.ontrack = (event) => {
             if (event.streams && event.streams.length > 0) {
-                console.log('Received remote stream:', event.streams[0]);
+                console.log('Received remote stream:', event.streams[0].id);
                 onTrackCallback(event.streams[0]);
             }
         };
@@ -251,6 +311,10 @@ class PeerService {
             this.peer.close();
             this.peer = null;
         }
+
+        // Reset state variables
+        this.pendingIceCandidates = [];
+        this.hasRemoteDescription = false;
     }
 }
 
