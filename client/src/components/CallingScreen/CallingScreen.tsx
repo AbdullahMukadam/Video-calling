@@ -196,6 +196,7 @@ function CallingScreen() {
     const handleIceCandidates = useCallback(async (data: IceCandidateData) => {
         try {
             const { candidate } = data;
+            console.log("Received ICE candidate:", candidate.candidate?.substring(0, 30) + '...');
             await peerService.addIceCandidate(candidate)
         } catch (error) {
             console.error("Error handling ICE candidate:", error)
