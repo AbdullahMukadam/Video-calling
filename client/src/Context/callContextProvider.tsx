@@ -23,7 +23,7 @@ function CallContextProvider({ children }: Prop) {
     const [MySocketId, setMySocketId] = useState("")
 
     return (
-        <CallContext.Provider value={{ MyId, setMyId, roomId, setRoomId, MySocketId, setMySocketId}}>
+        <CallContext.Provider value={{ MyId, setMyId, roomId, setRoomId, MySocketId, setMySocketId }}>
             {children}
         </CallContext.Provider>
     )

@@ -18,7 +18,7 @@ export const disconnectSocket = () => {
 };
 
 export const handleRoomCreation = (
-    userId: string | undefined,
+    userId: string,
     userEmail: string | undefined,
     callbacks: {
         setRoomId: (id: string) => void;
@@ -52,7 +52,7 @@ export const handleRoomCreation = (
 
 export const handleRoomJoining = (
     roomId: string,
-    userId: string | undefined,
+    userId: string,
     userEmail: string | undefined,
 ): Promise<string> => {
     return new Promise((resolve) => {

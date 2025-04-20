@@ -51,7 +51,7 @@ interface ReceivedNegoAnswer {
 
 function CallingScreen() {
     const params = useParams();
-    //const [isParticipantPresent, setIsParticipantPresent] = useState(false);
+    // const [isParticipantPresent, setIsParticipantPresent] = useState(false);
     const { user } = useAuth()
     const { MyId, MySocketId } = useCall()
     const socketInstance = useRef<Socket | null>(null);
@@ -75,7 +75,6 @@ function CallingScreen() {
 
     const handleStartCall = useCallback(async (joinerSocketId: string | number) => {
         try {
-            // peerService.createNewConnection();
             const streams = await navigator.mediaDevices.getUserMedia({
                 video: true,
                 audio: true
@@ -127,7 +126,6 @@ function CallingScreen() {
             const { offer, from, me } = data
             console.log("Received the Offer from The Server:", offer, "from this user:", from, "to me:", me)
 
-            // peerService.createNewConnection();
             const streams = await navigator.mediaDevices.getUserMedia({
                 video: true,
                 audio: true
@@ -186,7 +184,7 @@ function CallingScreen() {
             if (joinerEmail && joinerId && joinerSocketId) {
                 setjoinerSocketId(joinerSocketId.toString())
                 setjoinerId(joinerId)
-                // setIsParticipantPresent(true);
+                //setIsParticipantPresent(true);
                 console.log(`User joined room, email:${joinerEmail}, id:${joinerId}, socketId:${joinerSocketId}`);
                 handleStartCall(joinerSocketId)
             }
@@ -208,8 +206,6 @@ function CallingScreen() {
 
     const handleHandleNegoNeeded = useCallback(async () => {
         try {
-
-
             const offer = await peerService.getOffer();
             console.log("mysocketId:", MySocketId, "joinersocketid:", joinersocketId)
             socketInstance.current?.emit("nego-needed", {
@@ -220,7 +216,6 @@ function CallingScreen() {
 
         } catch (error) {
             console.error("Error in handleHandleNegoNeeded:", error)
-
         }
 
     }, [MySocketId, joinersocketId],)
@@ -267,8 +262,6 @@ function CallingScreen() {
 
         console.log('Socket initialized:', socket.id);
 
-        // peerService.createNewConnection()
-
         const getMedia = async () => {
             try {
                 const streams = await navigator.mediaDevices.getUserMedia({
@@ -300,8 +293,7 @@ function CallingScreen() {
             }
 
             if (peerService.peer) {
-                peerService.cleanup();
-                peerService.peer = null;
+                peerService.cleanup()
             }
 
             socket.disconnect()

@@ -7,7 +7,7 @@ import { CustomDialog } from '../Shadcn/Dialog';
 import axios from 'axios';
 import { Config } from '@/API/Config';
 
-interface CallHistory {
+interface callHistory {
   callId: string | number;
   createdAt: string | number
 }
@@ -18,7 +18,7 @@ function Home() {
   const [open, setopen] = useState(false)
   const [dialogmethod, setdialogmethod] = useState("")
   const [isAuth, setisAuth] = useState(false)
-  const [calls, setcalls] = useState<Array<CallHistory>>([])
+  const [calls, setcalls] = useState<Array<callHistory>>([])
   const location = useLocation()
 
   useEffect(() => {
@@ -38,7 +38,7 @@ function Home() {
       if (calls.status === 200) {
         setcalls(calls.data.callHistory)
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.log("An Error Occured in getting Calls History", err)
 
     }
@@ -48,7 +48,7 @@ function Home() {
     if (calls.length === 0 || location.state === "success") {
       getCallHistory()
     }
-  }, [])
+  })
 
 
   const handleDialogOpen = (method: string): void => {

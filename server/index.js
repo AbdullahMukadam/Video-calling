@@ -6,6 +6,7 @@ import cors from "cors"
 import cookieParser from "cookie-parser"
 import { Server } from "socket.io";
 import { SocketEvents } from "./SocketServer.js"
+import "dotenv/config"
 
 const PORT = 8000
 
@@ -14,7 +15,7 @@ const app = express()
 let server;
 
 const corsOptions = {
-    origin: "https://video-calling-cyan.vercel.app",
+    origin: process.env.NODE_ENV === "development" ? "http://localhost:5173" : "https://video-calling-cyan.vercel.app",
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'x-csrf-token'],
@@ -42,7 +43,7 @@ server = app.listen(PORT, (err) => {
 let io = new Server(server, {
     pingTimeout: 60000,
     cors: {
-        origin: "https://video-calling-cyan.vercel.app"
+        origin: process.env.NODE_ENV === "development" ? "http://localhost:5173" : "https://video-calling-cyan.vercel.app"
     }
 })
 
