@@ -109,8 +109,9 @@ const SignInWithCredentials = async (req, res) => {
 const LogOut = async (req, res) => {
     try {
         res.cookie("jwt", "", {
-            expiresIn: new Date(),
+            expires: new Date(0),
             sameSite: "none",
+            secure: true
         })
         res.status(200).json({
             success: true,
