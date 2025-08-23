@@ -196,7 +196,6 @@ function CallingScreen() {
     const handleIceCandidates = useCallback(async (data: IceCandidateData) => {
         try {
             const { candidate } = data;
-            console.log("Received ICE candidate:", candidate.candidate?.substring(0, 30) + '...');
             await peerService.addIceCandidate(candidate)
         } catch (error) {
             console.error("Error handling ICE candidate:", error)
@@ -295,7 +294,6 @@ function CallingScreen() {
 
             if (peerService.peer) {
                 peerService.cleanup()
-                peerService.peer = null
             }
 
             socket.disconnect()
@@ -308,18 +306,20 @@ function CallingScreen() {
         if (myStream) {
             myStream.getTracks().forEach(track => {
                 track.stop();
+                myStream.removeTrack(track)
             });
         }
 
         if (remoteStream) {
             remoteStream.getTracks().forEach(track => {
                 track.stop();
+                remoteStream.removeTrack(track)
             });
         }
 
-        if (peerService.peer) {
-            peerService.cleanup()
-        }
+
+        peerService.cleanup()
+
 
         //setIsParticipantPresent(false)
         setmyStream(null)

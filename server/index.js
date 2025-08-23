@@ -37,6 +37,7 @@ app.get("/", (req, res) => {
 
 
 server = app.listen(PORT, (err) => {
+    console.log("server listening on port ", PORT)
     if (err) console.log(err)
 })
 
