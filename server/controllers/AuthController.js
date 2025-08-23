@@ -64,8 +64,10 @@ const SignUpWithCredentials = async (req, res) => {
 const SignInWithCredentials = async (req, res) => {
     try {
         const { email, password } = req.body
+        console.log(email, password)
 
         const user = await db.select().from(users).where(eq(users.email, email))
+        console.log(user)
         if (user.length === 0) {
             return res.status(404).json({
                 success: false,
@@ -74,6 +76,7 @@ const SignInWithCredentials = async (req, res) => {
         }
 
         const verifyPass = await bcrypt.compare(password, user[0].password)
+        console.log(verifyPass)
         if (!verifyPass) {
             return res.status(401).json({
                 success: false,

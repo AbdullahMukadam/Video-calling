@@ -8,6 +8,13 @@ import nodePolyfills from 'rollup-plugin-node-polyfills';
 
 export default defineConfig({
   plugins: [react(), tailwindcss(), flowbiteReact()],
+  server: {
+    allowedHosts: [
+      'localhost',
+      '.local',
+      '3df8-2409-40c2-2042-5904-2d64-5ba6-ad9b-fb49.ngrok-free.app',
+    ]
+  },
   optimizeDeps: {
     esbuildOptions: {
       define: {
